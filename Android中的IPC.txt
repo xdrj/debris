@@ -1,0 +1,30 @@
+相关应用点：多进程开发
+## 使用场景
+1. 应用内要开启多个进程，比如单独模块要运行在单独进程，或者为了获取更多的资源
+2. 访问外部应用的服务或数据，如系统提供的ContentProvider
+## 开启多进程
+在四大组件中声明加上 android：process 属性指定具体的进程名
+有类似包名 + “：remote” 和 “全称” 两种进程起名方式
+> Android系统位每个进程单独分配一个独立的虚拟机，不同虚拟机在内存上有不同的地址空间，这样不同的虚拟机访问同一个类的对象也会有多分副本，且相互之间是无法影响的。带来的问题：
+>1. 静态成员和单例模式失效
+>2. 线程同步机制失效
+>3. SP可靠性下降（SP底层是XML实现的，不支持多进程读写）
+>4. Application 会多次创建（当一个组件跑在新的进程中时，系统为该进程分配的新的虚拟机，本质上相当于再次执行启动应用的过程，自然会有新的Application，本质上相当于两个不同的应用采用相同的SharedUID的模式）
+## IPC基础知识
+1. 序列化接口Serializable和Parcelable（本质上因为IPC是不同的内存块进行的通信，所以最后本质上都是对象的序列化和反序列化）
+对比：9
+Serializable ; 设备，网路序列化(文本型序列化)使用
+Parcelable： 内存序列化使用
+> Android 系统的一些类本身实现了Parcelable ：Intent,Bundle,Bitmap等
+2. Binder
+一个集成IBinder接口的类
+Android独有的IPC方式
+可以理解为一种虚拟的物理设备（类似路由器？）
+Framework层中，ServiceManager 连接 各种Manager（AM，WM）和 ManagerService的桥梁
+应用层中，服务端与客户端的媒介，bindService时服务端返回一个IBinder对象，通过该对象客户端可以调用服务端方法或获取服务端数据
+普通没有进程间通信的binder很简单，核心的是AIDL服务中的BInder
+> AIDL的几个要素
+> 1. 实体类     Book.java  实现Parcelable
+> 2. 实体类在AIDL中的声明类   Book.aidl
+> 3. aidl功能接口  IBookManger.aidl
+> 4. 系统根据功能接口自动生成对应 IBookManager.java 接口，这个接口继承了IInterface接口，所有在Binder中传输的接口都要继承该接口
